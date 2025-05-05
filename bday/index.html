@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Anjali! 🎉</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="icon" href="data:,"> <!-- Disable favicon requests -->
+</head>
+<body>
+    <!-- Initial Screen -->
+    <div id="initialScreen" class="screen active">
+        <button id="startButton" class="funny-button">Ready to Catch You??</button>
+    </div>
+
+    <!-- Mouse Game Screen -->
+    <div id="gameScreen" class="screen hidden">
+        <div id="mouseGrid"></div>
+        <div id="scoreDisplay">Caught: 0/5</div>
+        <div id="victoryOverlay" class="hidden">
+            <h2>Congratulations! You caught അഞ്ചലി! 🎉</h2>
+            <button id="nextStageButton">OK</button>
+        </div>
+    </div>
+
+    <!-- Cake Screen -->
+    <div id="cakeScreen" class="screen hidden">
+        <div id="door"></div>
+        <div id="cake">
+            <div class="candle"></div>
+            <div class="candle"></div>
+            <div class="candle"></div>
+            <div class="candle"></div>
+            <div class="candle"></div>
+        </div>
+        <div id="blowInstruction">Blow on your screen to blow out the candles!</div>
+    </div>
+
+    <!-- Final Celebration Screen -->
+    <div id="celebrationScreen" class="screen hidden">
+        <div class="popper-effect"></div>
+        <div class="bg-slideshow">
+            <img src="assets/images/photo1.jpg" class="bg-slide">
+            <img src="assets/images/photo2.jpg" class="bg-slide">
+            <img src="assets/images/photo3.jpg" class="bg-slide">
+            <img src="assets/images/photo4.jpg" class="bg-slide">
+            <img src="assets/images/photo5.jpg" class="bg-slide">
+        </div>
+        <h1 id="birthdayMessage">Happy Birthday Anjali!</h1>
+        <button id="audioMessageButton" class="audio-button">
+            🎵 Tap to hear the message
+        </button>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="birthdayAudio" src="assets/audio/happy-birthday.mp3"></audio>
+    <audio id="voiceMessage" src="assets/audio/voice-message.mp3"></audio>
+
+    <!-- Scripts -->
+<!-- Change script references to -->
+<script type="module" src="scripts/main.js"></script>
+<script type="module" src="scripts/game.js"></script>
+<script type="module" src="scripts/cake.js"></script>
+</body>
+</html>

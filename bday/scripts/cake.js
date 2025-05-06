@@ -1,110 +1,83 @@
-// scripts/cake.js
+// cake.js
+let blowDetected = false;
+let audioContext, analyser, microphone;
 
-let audioContext;
-let microphone;
-let analyser;
-let candlesBlown = 0;
-const BLOW_THRESHOLD = 0.7; // Adjust based on testing
+document.addEventListener('DOMContentLoaded', () => {
+  const blowBtn = document.getElementById('manualBlow');
 
-function initCakeSection() {
-    setupCandles();
-    setupAudioAnalysis();
-    document.getElementById('blowInstruction').classList.add('show');
-}
+  // Setup manual fallback
+  blowBtn.addEventListener('click', () => {
+    if (!blowDetected) handleBlow();
+  });
 
-function setupCandles() {
-    const candles = document.querySelectorAll('.candle');
-    candles.forEach((candle, index) => {
-        candle.style.left = `${20 + (index * 15)}%`;
+  // Trigger mic listening on cake screen
+  const observer = new MutationObserver(() => {
+    if (document.getElementById('cakeScreen').classList.contains('active')) {
+      listenForBlow();
+    }
+  });
+  observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+});
+
+function listenForBlow() {
+  if (blowDetected) return;
+
+  navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => {
+      audioContext = new AudioContext();
+      analyser = audioContext.createAnalyser();
+      microphone = audioContext.createMediaStreamSource(stream);
+      microphone.connect(analyser);
+      detectBlowVolume();
+    })
+    .catch(err => {
+      // fallback to button
+      document.getElementById('manualBlow').classList.remove('hidden');
+      console.warn('Mic blow detection failed, fallback enabled:', err);
     });
 }
 
-async function setupAudioAnalysis() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        microphone = audioContext.createMediaStreamSource(stream);
-        
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        microphone.connect(analyser);
-        
-        detectBlow();
-    } catch (error) {
-        console.error('Microphone access error:', error);
-        showManualBlowButton();
-    }
-}
+function detectBlowVolume() {
+  const data = new Uint8Array(analyser.fftSize);
+  const threshold = 30;
 
-function detectBlow() {
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    function checkBlow() {
-        analyser.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((a, b) => a + b) / bufferLength / 255;
-
-        if (average > BLOW_THRESHOLD) {
-            blowCandle();
-        }
-        requestAnimationFrame(checkBlow);
+  const check = () => {
+    analyser.getByteTimeDomainData(data);
+    let sum = 0;
+    for (let i = 0; i < data.length; i++) {
+      sum += Math.abs(data[i] - 128);
     }
 
-    checkBlow();
-}
-
-function blowCandle() {
-    if (candlesBlown >= 5) return;
-
-    const candles = document.querySelectorAll('.candle:not(.blown)');
-    if (candles.length > 0) {
-        const candle = candles[0];
-        candle.classList.add('blown');
-        candle.style.animation = 'candleBlow 0.5s forwards';
-        
-        candlesBlown++;
-        
-        if (candlesBlown === 5) {
-            handleAllCandlesBlown();
-        }
+    if (sum / data.length > threshold) {
+      if (!blowDetected) handleBlow();
+    } else if (!blowDetected) {
+      requestAnimationFrame(check);
     }
+  };
+
+  check();
 }
 
-function handleAllCandlesBlown() {
-    // Stop microphone access
-    if (microphone) microphone.disconnect();
-    
-    // Open door
-    document.getElementById('door').style.transform = 'perspective(1000px) rotateY(-90deg)';
-    
-    // Play birthday song
-    const audio = document.getElementById('birthdayAudio');
-    audio.play();
-    
-    // Transition to celebration screen
-    setTimeout(() => {
-        document.getElementById('cakeScreen').classList.remove('active');
-        document.getElementById('celebrationScreen').classList.add('active');
-        startCelebration();
-    }, 3000);
-}
+function handleBlow() {
+  blowDetected = true;
 
-function showManualBlowButton() {
-    const button = document.createElement('button');
-    button.textContent = 'Click to Blow Candles';
-    button.className = 'funny-button';
-    button.addEventListener('click', blowCandle);
-    document.getElementById('cakeScreen').appendChild(button);
-}
+  // Stop mic stream
+  if (microphone && microphone.mediaStream) {
+    microphone.mediaStream.getTracks().forEach(track => track.stop());
+  }
 
-// CSS animation for candle blow
-const style = document.createElement('style');
-style.textContent = `
-@keyframes candleBlow {
-    0% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; transform: scale(0); }
+  // Animate candles
+  document.querySelectorAll('.candle').forEach(candle => {
+    candle.classList.add('lit');
+  });
+
+  // Animate door
+  const door = document.getElementById('door');
+  door.style.transform = 'rotateY(-100deg)';
+
+  // Delay to start celebration
+  setTimeout(() => {
+    window.showScreen('celebrationScreen');
+    window.startCelebration();
+  }, 2000);
 }
-`;
-document.head.appendChild(style);
-// Add to bottom of cake.js
-window.initCakeSection = initCakeSection;

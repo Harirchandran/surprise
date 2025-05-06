@@ -14,7 +14,7 @@ window.startGame = () => {
   score = 0;
   updateScore();
   showScreen('gameScreen');
-  gameInterval = setInterval(spawnMouse, 1000);
+  gameInterval = setInterval(spawnMouse, 600);
 };
 
 function createGrid() {

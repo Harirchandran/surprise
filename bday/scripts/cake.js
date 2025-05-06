@@ -1,16 +1,13 @@
-// cake.js
 let blowDetected = false;
-let audioContext, analyser, microphone;
+let audioContext, analyser, microphone, microphoneStream;
 
 document.addEventListener('DOMContentLoaded', () => {
   const blowBtn = document.getElementById('manualBlow');
 
-  // Setup manual fallback
   blowBtn.addEventListener('click', () => {
     if (!blowDetected) handleBlow();
   });
 
-  // Trigger mic listening on cake screen
   const observer = new MutationObserver(() => {
     if (document.getElementById('cakeScreen').classList.contains('active')) {
       listenForBlow();
@@ -26,12 +23,15 @@ function listenForBlow() {
     .then(stream => {
       audioContext = new AudioContext();
       analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+
       microphone = audioContext.createMediaStreamSource(stream);
+      microphoneStream = stream;
+
       microphone.connect(analyser);
       detectBlowVolume();
     })
     .catch(err => {
-      // fallback to button
       document.getElementById('manualBlow').classList.remove('hidden');
       console.warn('Mic blow detection failed, fallback enabled:', err);
     });
@@ -62,13 +62,13 @@ function handleBlow() {
   blowDetected = true;
 
   // Stop mic stream
-  if (microphone && microphone.mediaStream) {
-    microphone.mediaStream.getTracks().forEach(track => track.stop());
+  if (microphoneStream) {
+    microphoneStream.getTracks().forEach(track => track.stop());
   }
 
   // Animate candles
   document.querySelectorAll('.candle').forEach(candle => {
-    candle.classList.add('lit');
+    candle.classList.remove('lit');
   });
 
   // Animate door

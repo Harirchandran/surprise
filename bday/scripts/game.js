@@ -1,81 +1,70 @@
-// scripts/game.js
-const GRID_SIZE = 5;
-const MOUSE_APPEAR_INTERVAL = 1000;
+// game.js
+const gridSize = 5;
 let score = 0;
 let gameInterval;
+const totalToCatch = 5;
 
-document.getElementById('startButton').addEventListener('click', startGame);
+document.addEventListener('DOMContentLoaded', () => {
+  createGrid();
+  document.getElementById('nextStageButton').addEventListener('click', goToCakeScreen);
+});
 
-function startGame() {
-    // Hide initial screen
-    document.getElementById('initialScreen').classList.remove('active');
-    // Show game screen
-    document.getElementById('gameScreen').classList.add('active');
-    
-    createGrid();
-    startMouseGame();
-}
+// Expose startGame globally
+window.startGame = () => {
+  score = 0;
+  updateScore();
+  showScreen('gameScreen');
+  gameInterval = setInterval(spawnMouse, 600);
+};
 
 function createGrid() {
-    const grid = document.getElementById('mouseGrid');
-    grid.innerHTML = '';
-    
-    for(let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'grid-cell';
-        grid.appendChild(cell);
-    }
-}
-
-function startMouseGame() {
-    gameInterval = setInterval(spawnMouse, MOUSE_APPEAR_INTERVAL);
-    
-    // Add click listener to entire grid
-    document.getElementById('mouseGrid').addEventListener('click', handleMouseClick);
+  const grid = document.getElementById('mouseGrid');
+  for (let i = 0; i < gridSize * gridSize; i++) {
+    const cell = document.createElement('div');
+    cell.classList.add('grid-cell');
+    grid.appendChild(cell);
+  }
 }
 
 function spawnMouse() {
-    // Remove existing mice
-    document.querySelectorAll('.mouse').forEach(mouse => mouse.remove());
-    
-    // Get random cell
-    const cells = document.getElementsByClassName('grid-cell');
-    const randomIndex = Math.floor(Math.random() * cells.length);
-    const selectedCell = cells[randomIndex];
-    
-    // Create mouse image
-    const mouse = document.createElement('img');
-    mouse.src = 'assets/images/mouse.png';
-    mouse.className = 'mouse';
-    selectedCell.appendChild(mouse);
+  clearMice();
+  const cells = document.querySelectorAll('.grid-cell');
+  const index = Math.floor(Math.random() * cells.length);
+  const cell = cells[index];
+
+  const mouseImg = document.createElement('img');
+  mouseImg.src = 'assets/images/mouse.png';
+  mouseImg.alt = 'mouse';
+  mouseImg.classList.add('mouse');
+  mouseImg.addEventListener('click', catchMouse);
+
+  cell.appendChild(mouseImg);
 }
 
-function handleMouseClick(event) {
-    if(event.target.closest('.mouse')) {
-        // Remove clicked mouse
-        event.target.remove();
-        score++;
-        
-        // Update score display
-        document.getElementById('scoreDisplay').textContent = `Caught: ${score}/5`;
-        
-        if(score === 5) {
-            endGame();
-        }
-    }
+function clearMice() {
+  document.querySelectorAll('.grid-cell').forEach(cell => {
+    cell.innerHTML = '';
+  });
 }
 
-function endGame() {
+function catchMouse(e) {
+  score++;
+  updateScore();
+  e.target.remove();
+
+  if (score >= totalToCatch) {
     clearInterval(gameInterval);
     document.getElementById('victoryOverlay').classList.remove('hidden');
-    
-    // Remove grid click listener
-    document.getElementById('mouseGrid').removeEventListener('click', handleMouseClick);
-    
-    // Update next stage button handler
-    document.getElementById('nextStageButton').addEventListener('click', () => {
-        document.getElementById('gameScreen').classList.remove('active');
-        document.getElementById('cakeScreen').classList.add('active');
-        window.initCakeSection(); // Initialize cake section
-    });
+    document.getElementById('victoryOverlay').classList.add('show');
+  }
+}
+
+function updateScore() {
+  document.getElementById('score').textContent = score;
+}
+
+function goToCakeScreen() {
+  document.getElementById('victoryOverlay').classList.add('hidden');
+  hideScreen('gameScreen');
+  showScreen('cakeScreen');
 }
